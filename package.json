@@ -1,0 +1,39 @@
+{
+  "name": "cordova-imaging",
+  "description": "Configuration driven imaging module used by Cordova apps to generate app icons, splash screens, app store images, etc.",
+  "version": "0.0.1",
+  "homepage": "https://github.com/mmacmillan/cordova-imaging",
+  "author": {
+    "name": "Mike MacMillan",
+    "email": "mikejmacmillan@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mmacmillan/cordova-imaging.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mmacmillan/cordova-imaging/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/mmacmillan/cordova-imaging/blob/master/LICENSE-MIT"
+    }
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "dependencies": {
+    "lodash": "~2.4.1",
+    "q": "~1.0.1"
+  },
+  "keywords": [
+    "cordova",
+    "imaging",
+    "icons",
+    "app icons",
+    "splash screens",
+    "splashscreen"
+  ]
+
+}
