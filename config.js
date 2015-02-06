@@ -6,32 +6,39 @@
 
 module.exports = {
     configXml: 'config.xml',
+    
+    //** generated assets like previews, etc, are output here
+    assetPath: 'assets/',
 
-    //** default image source config; use an assets subfolder, as this is also where the appstore images will be generated
+    //** appicon and splashscreen source configs. by default they are in an ./assets subfolder in the root of your 
+    //** cordova project.  these can be located anywhere on disk; override in the config local to your project.
     sources: {
         appicon: 'assets/appicon.png',
         splashscreen: 'assets/splashscreen.png'
     },
 
-    //** default platforms are ios and android 
+    //** default platforms we target imaging for are ios and android 
     platforms: ['ios', 'android'],
 
-    //** defaults for imagemagick calls
+    //** default config for imagemagick
     imagemagick: {
         resize: { format: 'png', quality: 1.0 },
         crop: { format: 'png', quality: 1.0, gravity: 'Center' }
     },
 
 
-    //** platform configs
+
+    //** platform specific configurations
+    //** ----
 
     ios: {
         name: 'iOS',
         path: 'platforms/ios',
-        assetPath: 'platforms/ios/$name$/Resources/',
+        destinationPath: 'platforms/ios/$name$/Resources/',
 
         generateIcons: true,
         generateSplashscreens: true,
+        generatePreviews: true,
 
         //** source: https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html
         icons: [
@@ -70,16 +77,40 @@ module.exports = {
             { width : 2208,  height : 1242, output: 'splash/Default-Landscape-736h.png' },
             { width : 2048,  height : 1536, output: 'splash/Default-Landscape@2x~ipad.png' },
             { width : 1024,  height : 768, output: 'splash/Default-Landscape~ipad.png' }
+        ],
+
+        //** https://developer.apple.com/library/ios/documentation/LanguagesUtilities/Conceptual/iTunesConnect_Guide/Appendices/Properties.html#//apple_ref/doc/uid/TP40011225-CH26-SW2
+        previews: [
+            //** 3.5 inch retina displays
+            { width : 640,  height : 920, type: '3-5inch', output: '$file$-port.png' },
+            { width : 640,  height : 960, type: '3-5inch', output: '$file$-port-full.png' },
+            { width : 960,  height : 600, type: '3-5inch', output: '$file$-land.png' },
+            { width : 960,  height : 640, type: '3-5inch', output: '$file$-land-full.png' },
+
+            //** 4 inch retina displays
+            { width : 640,  height : 1096, type: '4inch', output: '$file$-port.png' },
+            { width : 640,  height : 1136, type: '4inch', output: '$file$-port-full.png' },
+            { width : 1136,  height : 600, type: '4inch', output: '$file$-land.png' },
+            { width : 1136,  height : 640, type: '4inch', output: '$file$-land-full.png' },
+
+            //** 4.7 inch retina displays (iphone6)
+            { width : 750,  height : 1134, type: '4-7inch', output: '$file$-port.png' },
+            { width : 1134,  height : 750, type: '4-7inch', output: '$file$-land.png' },
+
+            //** 5.5 inch retina displays (iphone6 plus)
+            { width : 1242,  height : 2208, type: '5-5inch', output: '$file$-port.png' },
+            { width : 2208,  height : 1242, type: '5-5inch', output: '$file$-land.png' }
         ]
     },
 
     android: {
         name: 'Android',
         path: 'platforms/android/',
-        assetPath: 'platforms/android/res/',
+        destinationPath: 'platforms/android/res/',
 
         generateIcons: true,
         generateSplashscreens: true,
+        generatePreviews: true,
 
         //** source: http://developer.android.com/design/style/iconography.html
         //** note: ldpi support is automatically provided by android
@@ -89,7 +120,7 @@ module.exports = {
             { size: 72, output: 'drawable-hdpi/icon.png' },
             { size: 96, output: 'drawable-xhdpi/icon.png' }
             
-            //** cordova doesn't create these folders, and imagemagick wont create folders as it writes paths...commenting out for now
+            //** cordova doesn't create these folders (yet), and imagemagick wont create folders as it writes paths...commenting out for now
             //{ size: 144, output: 'drawable-xxhdpi/icon.png' },
             //{ size: 192, output: 'drawable-xxxhdpi/icon.png' }
         ],

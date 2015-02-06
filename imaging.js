@@ -4,70 +4,105 @@ var fs = require('fs'),
     _ = require('lodash'),
     xmlParser = require('xml2js').parseString,
     magick = require('imagemagick'),
+    mkdirp = require('mkdirp'),
+    phantomjs = require('phantomjs'),
     defaultConfig = require('./config');
 
 //** load the optional app specific imaging config
 var config = _.extend({}, defaultConfig);
 try { 
     var cfg = require(process.cwd() + '/imaging.json');
-    _.extend(config, cfg);
+    _.merge(config, cfg);
 }
 catch(e) {}
+
+var handleError = function(err) { console.log('\nan unexpected error occurred:', err, '\n') };
 
 var imaging = {
     project: null,
     targetPlatforms: [],
 
-    cmd: function() {
-        imaging.run();
-    },
-
+    //** runs and generates all-the-things, based on the configuration
     run: function() {
-        var def = Q.defer(),
-            handleError = function(err) { console.log('an unexpected error occurred', err) };
+        var def = Q.defer();
 
         imaging.verifyEnvironment()
             .then(imaging.verifySources)
             .then(imaging.loadProject)
             .then(imaging.generateIcons)
             .then(imaging.generateSplashscreens)
+            .then(imaging.generatePreviews)
             .then(function() {
                 console.log('imaging complete!');
             })
             .catch(handleError);
     },
 
-    verifyEnvironment: function() {
-        var def = Q.defer(),
-            sources = config.sources,
-            platforms = [];
+    //** this is used by the binary for the cli
+    cmd: function() {
+        imaging.run();
+    },
 
-        //** simple function to check if a platform is supported, async
-        var checkPlatform = function(platform) {
-            var d = Q.defer(),
+    util: {
+        checkPlatform: function(platform) {
+            var def = Q.defer(),
                 cfg = config[platform];
 
-            if(!cfg) d.resolve();
+            if(!cfg) def.resolve();
 
             cfg && fs.exists(cfg.path, function(exists) {
                 console.log('   ', platform, '...', exists?'found':'not found');
                 if(exists) imaging.targetPlatforms.push(cfg);
-                d.resolve();
+                def.resolve();
             });
 
-            return d.promise;
-        }
+            return def.promise;
+        },
 
+        checkPath: function(path) {
+            var def = Q.defer();
+
+            fs.exists(path, function(exists) {
+                !!exists
+                    ? def.resolve()
+                    : def.reject('could not find the path: ', path);
+            });
+
+            return def.promise;
+        },
+
+        ensurePath: function(path) {
+            var def = Q.defer();
+
+            //** checks a path if its exists, creating it if it doesn't (at any depth ala mkdirp)
+            imaging.util.checkPath(path).then(def.resolve, mkdirp.bind(this, path, function(err) {
+                !!err && def.reject() || def.resolve();
+            }));
+
+            return def.promise;
+        },
+
+        ensurePathSync: function(path) {
+            if(!fs.existsSync(path)) mkdirp.sync(path)
+        }
+    },
+
+    verifyEnvironment: function() {
+        var def = Q.defer(),
+            sources = config.sources,
+            platforms = [];
+        
         //** determine which platforms are supported based on whats defined in the config, and what is on disk
         console.log('verifying platforms');
-        return Q.all(_.map(config.platforms||[], checkPlatform));
+        return Q.all(_.map(config.platforms||[], imaging.util.checkPlatform));
     },
 
     verifySources: function() {
         var def = Q.defer(),
-            p = def.promise;
+            p = def.promise,
+            util = imaging.util;
 
-        console.log('verifying sources');
+        console.log('\nverifying sources');
 
         //** make sure we've defined a few platforms
         if(imaging.targetPlatforms.length == 0)
@@ -78,24 +113,15 @@ var imaging = {
                 needsSplash = _.find(imaging.targetPlatforms, function(cfg) { return cfg.generateSplashscreens; }),
                 actions = [];
 
-            var checkSource = function(path) {
-                var d = Q.defer();
-
-                fs.exists(path, function(exists) {
-                    !!exists
-                        ? d.resolve()
-                        : d.reject('could not find the source: ', path);
-                });
-
-                return d.promise;
-            }
+            //** verify the asset path exists
+            util.ensurePath(config.assetPath);
 
             //** if we need to generate app icons, verify the source has been defined and is valid
             if(needsIcon) {
                 console.log('    appicon source ...', !!config.sources.appicon?'found':'not found');
                 !config.sources.appicon
                     ? def.reject('at least one platform is generating icons, and an appicon source hasn\'t been defined')
-                    : actions.push(checkSource.bind(this, config.sources.appicon));
+                    : actions.push(util.checkPath(config.sources.appicon));
             }
 
             //** same thing for splashscreens
@@ -103,7 +129,7 @@ var imaging = {
                 console.log('    splashscreen source ...', !!config.sources.splashscreen?'found':'not found');
                 !config.sources.appicon
                     ? def.reject('at least one platform is generating splashscreens, and a splashscreen source hasn\'t been defined')
-                    : actions.push(checkSource.bind(this, config.sources.splashscreen));
+                    : actions.push(util.checkPath(config.sources.splashscreen));
             }
 
             Q.all(actions).then(def.resolve, def.reject.bind(def, 'the sources could not be verified'));
@@ -115,7 +141,7 @@ var imaging = {
     loadProject: function() {
         var def = Q.defer();
 
-        console.log('loading project');
+        console.log('\nloading project');
 
         //** load the project's config.xml and extract the project's xml
         fs.readFile(config.configXml, function(err, xml) {
@@ -145,22 +171,17 @@ var imaging = {
     //** ----
 
     generateIcons: function() {
-        var def = Q.defer(),
-            queue = [];
+        var queue = [];
 
         //** initiate icon generation for each platform that has it enabled
         _.each(imaging.targetPlatforms, function(cfg) {
-            var def = Q.defer();
+            if(!cfg.generateIcons || !cfg.icons)
+                return Q.resolve();
 
-            if(!cfg.generateIcons) {
-                def.resolve();
-                return def.promise; 
-            }
+            console.log('\ngenerating icons for', cfg.name);
 
-            console.log('generating icons for', cfg.name);
-
-            var assetPath = cfg.assetPath.replace('$name$', imaging.project.name),
-                fn = imaging.generateIcon.bind(this, assetPath);
+            var dest = cfg.destinationPath.replace('$name$', imaging.project.name),
+                fn = imaging.generateIcon.bind(this, dest);
 
             queue.push(Q.all(_.map(cfg.icons, fn)));
         });
@@ -195,22 +216,17 @@ var imaging = {
     //** ----
 
     generateSplashscreens: function() {
-        var def = Q.defer(),
-            queue = [];
+        var queue = [];
 
         //** initiate splashscreen generation for each platform that has it enabled
         _.each(imaging.targetPlatforms, function(cfg) {
-            var def = Q.defer();
+            if(!cfg.generateSplashscreens || !cfg.splashscreens)
+                return Q.resolve();
 
-            if(!cfg.generateSplashscreens) {
-                def.resolve();
-                return def.promise; 
-            }
+            console.log('\ngenerating splashscreens for', cfg.name);
 
-            console.log('generating splashscreens for', cfg.name);
-
-            var assetPath = cfg.assetPath.replace('$name$', imaging.project.name),
-                fn = imaging.generateSplashscreen.bind(this, assetPath);
+            var dest = cfg.destinationPath.replace('$name$', imaging.project.name),
+                fn = imaging.generateSplashscreen.bind(this, dest);
 
             queue.push(Q.all(_.map(cfg.splashscreens, fn)));
         });
@@ -249,7 +265,80 @@ var imaging = {
         });
 
         return def.promise;
+    },
+
+
+    //** preview generation methods
+    //** ----
+
+    generatePreviews: function() {
+        var queue = [],
+            sources = config.sources.previews;
+
+        if(!sources || !Array.isArray(sources))
+            return Q.resolve();
+
+        //** initiate preview generation for each platform that has it enabled
+        _.each(imaging.targetPlatforms, function(cfg) {
+            if(!cfg.generatePreviews || !cfg.previews)
+                return Q.resolve();
+
+            console.log('\ngenerating previews for', cfg.name);
+            var path = pth.join(config.assetPath, 'previews', cfg.name),
+                fn = imaging.generatePreview.bind(this, path, cfg);
+
+            queue.push(Q.all(_.map(sources, fn)));
+        });
+
+        return Q.all(queue);
+    },
+
+
+    generatePreview: function(path, cfg, source) {
+        console.log('   ', source);
+
+        //** generate the options for this splashscreen, based on the root config
+        var queue = [],
+            srcPath = source[0]=='/' ? source : pth.join(process.cwd(), source);
+
+        _.each(cfg.previews, function(preview) {
+            //** determine the path to the previews of the specific type/platform
+            var previewRoot = pth.join(process.cwd(), path, preview.type),
+                filename = preview.output.replace('$file$', pth.basename(source, pth.extname(source))),
+                previewPath = pth.join(previewRoot, filename),
+                opt = _.extend({}, config.imagemagick.crop, {
+                    srcPath: srcPath,
+                    dstPath: previewPath
+                });
+
+            console.log('       ', preview.width, 'x', preview.height, preview.type, filename);
+            imaging.util.ensurePathSync(previewRoot);
+
+            //** if we provide both height and width, we get a square and its fubars the crop; give it the largest dimension only
+            preview.width > preview.height 
+                ? (opt.width = preview.width)
+                : (opt.height = preview.height);
+
+            //** specify the gravity and crop dimensions for our target preview
+            opt.customArgs = [
+                '-gravity',
+                'Center',
+                '-crop',
+                preview.width +'x'+ preview.height +'+0+0',
+                '+repage'
+            ];
+
+            var def = Q.defer();
+            queue.push(def.promise);
+            magick.resize(opt, function(err) {
+                !!err ? def.reject(err) : def.resolve();
+            });
+        });
+
+        return Q.all(queue);
     }
+
+
 }
 
 module.exports = imaging;
