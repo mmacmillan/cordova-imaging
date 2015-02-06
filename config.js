@@ -16,10 +16,19 @@ module.exports = {
     //** default platforms are ios and android 
     platforms: ['ios', 'android'],
 
+    //** defaults for imagemagick calls
+    imagemagick: {
+        resize: {
+            format: 'png',
+            quality: 1.0
+        }
+    },
+
 
     //** platform configs
 
     ios: {
+        name: 'iOS',
         path: 'platforms/ios',
         assetPath: 'platforms/ios/$name$/Resources/',
 
@@ -67,6 +76,7 @@ module.exports = {
     },
 
     android: {
+        name: 'Android',
         path: 'platforms/android/',
         assetPath: 'platforms/android/res/',
 
@@ -79,9 +89,11 @@ module.exports = {
             { size: 96, output: 'drawable/icon.png' },
             { size: 48, output: 'drawable-mdpi/icon.png' },
             { size: 72, output: 'drawable-hdpi/icon.png' },
-            { size: 96, output: 'drawable-xhdpi/icon.png' },
-            { size: 144, output: 'drawable-xxhdpi/icon.png' },
-            { size: 192, output: 'drawable-xxxhdpi/icon.png' }
+            { size: 96, output: 'drawable-xhdpi/icon.png' }
+            
+            //** cordova doesn't create these folders, and imagemagick wont create folders as it writes paths...commenting out for now
+            //{ size: 144, output: 'drawable-xxhdpi/icon.png' },
+            //{ size: 192, output: 'drawable-xxxhdpi/icon.png' }
         ],
 
         //** source: http://developer.android.com/guide/practices/screens_support.html
@@ -93,10 +105,10 @@ module.exports = {
             { width: 1280, height: 720, output: 'drawable-land-xhdpi' },
 
             //** portrait
-            { width: 200, height: 320, output: 'drawable-land-ldpi' },
-            { width: 320, height: 480, output: 'drawable-land-mdpi' },
-            { width: 480, height: 800, output: 'drawable-land-hdpi' },
-            { width: 720, height: 1280, output: 'drawable-land-xhdpi' }
+            { width: 200, height: 320, output: 'drawable-port-ldpi' },
+            { width: 320, height: 480, output: 'drawable-port-mdpi' },
+            { width: 480, height: 800, output: 'drawable-port-landhdpi' },
+            { width: 720, height: 1280, output: 'drawable-port-xhdpi' }
         ]
     }
 

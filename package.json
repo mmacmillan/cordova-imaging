@@ -24,8 +24,10 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
-    "lodash": "~2.4.1",
-    "q": "1.X.X"
+    "lodash": "2.4.x",
+    "q": "1.1.x",
+    "xml2js": "0.4.x",
+    "imagemagick": "0.1.x"
   },
   "keywords": [
     "cordova",
