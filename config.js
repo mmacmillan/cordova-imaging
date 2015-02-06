@@ -18,10 +18,8 @@ module.exports = {
 
     //** defaults for imagemagick calls
     imagemagick: {
-        resize: {
-            format: 'png',
-            quality: 1.0
-        }
+        resize: { format: 'png', quality: 1.0 },
+        crop: { format: 'png', quality: 1.0, gravity: 'Center' }
     },
 
 
@@ -99,16 +97,16 @@ module.exports = {
         //** source: http://developer.android.com/guide/practices/screens_support.html
         splashscreens: [
             //** landscape
-            { width: 320, height: 200, output: 'drawable-land-ldpi' },
-            { width: 480, height: 320, output: 'drawable-land-mdpi' },
-            { width: 800, height: 480, output: 'drawable-land-hdpi' },
-            { width: 1280, height: 720, output: 'drawable-land-xhdpi' },
+            { width: 320, height: 200, output: 'drawable-land-ldpi/screen.png' },
+            { width: 480, height: 320, output: 'drawable-land-mdpi/screen.png' },
+            { width: 800, height: 480, output: 'drawable-land-hdpi/screen.png' },
+            { width: 1280, height: 720, output: 'drawable-land-xhdpi/screen.png' },
 
             //** portrait
-            { width: 200, height: 320, output: 'drawable-port-ldpi' },
-            { width: 320, height: 480, output: 'drawable-port-mdpi' },
-            { width: 480, height: 800, output: 'drawable-port-landhdpi' },
-            { width: 720, height: 1280, output: 'drawable-port-xhdpi' }
+            { width: 200, height: 320, output: 'drawable-port-ldpi/screen.png' },
+            { width: 320, height: 480, output: 'drawable-port-mdpi/screen.png' },
+            { width: 480, height: 800, output: 'drawable-port-hdpi/screen.png' },
+            { width: 720, height: 1280, output: 'drawable-port-xhdpi/screen.png' }
         ]
     }
 

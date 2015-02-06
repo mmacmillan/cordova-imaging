@@ -3,19 +3,19 @@ var fs = require('fs'),
     Q = require('q'),
     _ = require('lodash'),
     xmlParser = require('xml2js').parseString,
-    magickResize = require('imagemagick').resize,
+    magick = require('imagemagick'),
     defaultConfig = require('./config');
 
 //** load the optional app specific imaging config
 var config = _.extend({}, defaultConfig);
 try { 
-    _.extend(config, require(process.cwd() + '/imaging.json'));
+    var cfg = require(process.cwd() + '/imaging.json');
+    _.extend(config, cfg);
 }
 catch(e) {}
 
 var imaging = {
     project: null,
-    failed: false,
     targetPlatforms: [],
 
     cmd: function() {
@@ -30,12 +30,9 @@ var imaging = {
             .then(imaging.verifySources)
             .then(imaging.loadProject)
             .then(imaging.generateIcons)
+            .then(imaging.generateSplashscreens)
             .then(function() {
                 console.log('imaging complete!');
-
-                if(imaging.failed)
-                    console.log('it looks like there was a problem along the way; check your folder structure');
-
             })
             .catch(handleError);
     },
@@ -142,6 +139,11 @@ var imaging = {
         return def.promise;
     },
 
+
+
+    //** appicon generation methods
+    //** ----
+
     generateIcons: function() {
         var def = Q.defer(),
             queue = [];
@@ -170,16 +172,79 @@ var imaging = {
 
         //** generate the options for this icon, based on the root config
         var def = Q.defer(),
+            iconPath = config.sources.appicon,
             opt = _.extend({}, config.imagemagick.resize, {
-                srcPath: pth.join(process.cwd(), config.sources.appicon),
+                srcPath: iconPath[0]=='/' ? iconPath : pth.join(process.cwd(), iconPath),
                 dstPath: pth.join(process.cwd(), path, icon.output),
                 height: icon.size,
                 width: icon.size
             });
 
         console.log('   ', icon.size, 'x', icon.size, icon.output);
-        magickResize(opt, function(err) {
+        magick.resize(opt, function(err) {
             //** imagemagick wont create directories (yet), so a failure in creating images usually means directories are missing...
+            !!err ? def.reject(err) : def.resolve();
+        });
+
+        return def.promise;
+    },
+
+
+
+    //** splashscreen generation methods
+    //** ----
+
+    generateSplashscreens: function() {
+        var def = Q.defer(),
+            queue = [];
+
+        //** initiate splashscreen generation for each platform that has it enabled
+        _.each(imaging.targetPlatforms, function(cfg) {
+            var def = Q.defer();
+
+            if(!cfg.generateSplashscreens) {
+                def.resolve();
+                return def.promise; 
+            }
+
+            console.log('generating splashscreens for', cfg.name);
+
+            var assetPath = cfg.assetPath.replace('$name$', imaging.project.name),
+                fn = imaging.generateSplashscreen.bind(this, assetPath);
+
+            queue.push(Q.all(_.map(cfg.splashscreens, fn)));
+        });
+
+        return Q.all(queue);
+    },
+
+
+    generateSplashscreen: function(path, splash) {
+        //** generate the options for this splashscreen, based on the root config
+        var def = Q.defer(),
+            splashPath = config.sources.splashscreen,
+            opt = _.extend({}, config.imagemagick.crop, {
+                srcPath: splashPath[0]=='/' ? splashPath : pth.join(process.cwd(), splashPath),
+                dstPath: pth.join(process.cwd(), path, splash.output)
+            });
+
+        console.log('   ', splash.width, 'x', splash.height, splash.output);
+
+        //** if we provide both height and width, we get a square; give it the largest dimension, setting us up for the crop 
+        splash.width > splash.height 
+            ? (opt.width = splash.width)
+            : (opt.height = splash.height);
+
+        //** specify the gravity and crop dimensions for our target splashscreen
+        opt.customArgs = [
+            '-gravity',
+            'Center',
+            '-crop',
+            splash.width +'x'+ splash.height +'+0+0',
+            '+repage'
+        ];
+
+        magick.resize(opt, function(err) {
             !!err ? def.reject(err) : def.resolve();
         });
 
