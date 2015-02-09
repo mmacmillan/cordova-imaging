@@ -62,6 +62,9 @@ module.exports = {
             { size: 114, output: 'icons/icon@2x.png' }
         ],
 
+        //** define the app store app icon; this will be generated along with the normal app icons; no alphas or transparencies, hence the jpg
+        appstoreIcon: { size: 1024, output: 'appstore-icon.jpg' },
+
         //** source: https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html#//apple_ref/doc/uid/TP40006556-CH27-SW2
         splashscreens: [
             //** portrait
@@ -80,26 +83,40 @@ module.exports = {
         ],
 
         //** https://developer.apple.com/library/ios/documentation/LanguagesUtilities/Conceptual/iTunesConnect_Guide/Appendices/Properties.html#//apple_ref/doc/uid/TP40011225-CH26-SW2
+        //** note: we render jpgs because the app store wont accept images with transparencies or alpha channels
         previews: [
             //** 3.5 inch retina displays
-            { width : 640,  height : 920, type: '3-5inch', output: '$file$-port.png' },
-            { width : 640,  height : 960, type: '3-5inch', output: '$file$-port-full.png' },
-            { width : 960,  height : 600, type: '3-5inch', output: '$file$-land.png' },
-            { width : 960,  height : 640, type: '3-5inch', output: '$file$-land-full.png' },
+            { width : 640,  height : 920, type: '3-5inch', output: '$file$-port.jpg' },
+            { width : 640,  height : 960, type: '3-5inch', output: '$file$-port-full.jpg' },
+            { width : 960,  height : 600, type: '3-5inch', output: '$file$-land.jpg' },
+            { width : 960,  height : 640, type: '3-5inch', output: '$file$-land-full.jpg' },
 
             //** 4 inch retina displays
-            { width : 640,  height : 1096, type: '4inch', output: '$file$-port.png' },
-            { width : 640,  height : 1136, type: '4inch', output: '$file$-port-full.png' },
-            { width : 1136,  height : 600, type: '4inch', output: '$file$-land.png' },
-            { width : 1136,  height : 640, type: '4inch', output: '$file$-land-full.png' },
+            { width : 640,  height : 1096, type: '4inch', output: '$file$-port.jpg' },
+            { width : 640,  height : 1136, type: '4inch', output: '$file$-port-full.jpg' },
+            { width : 1136,  height : 600, type: '4inch', output: '$file$-land.jpg' },
+            { width : 1136,  height : 640, type: '4inch', output: '$file$-land-full.jpg' },
 
             //** 4.7 inch retina displays (iphone6)
-            { width : 750,  height : 1134, type: '4-7inch', output: '$file$-port.png' },
-            { width : 1134,  height : 750, type: '4-7inch', output: '$file$-land.png' },
+            { width : 750,  height : 1334, type: '4-7inch', output: '$file$-port.jpg' },
+            { width : 1334,  height : 750, type: '4-7inch', output: '$file$-land.jpg' },
 
             //** 5.5 inch retina displays (iphone6 plus)
-            { width : 1242,  height : 2208, type: '5-5inch', output: '$file$-port.png' },
-            { width : 2208,  height : 1242, type: '5-5inch', output: '$file$-land.png' }
+            { width : 1242,  height : 2208, type: '5-5inch', output: '$file$-port.jpg' },
+            { width : 2208,  height : 1242, type: '5-5inch', output: '$file$-land.jpg' },
+
+            //** ipad 
+            { width : 768,  height : 1004, type: 'ipad', output: '$file$-port.jpg' },
+            { width : 768,  height : 1024, type: 'ipad', output: '$file$-port-full.jpg' },
+            { width : 1024,  height : 748, type: 'ipad', output: '$file$-land.jpg' },
+            { width : 1024,  height : 768, type: 'ipad', output: '$file$-land-full.jpg' },
+
+            //** ipad retina
+            { width : 1536,  height : 2008, type: 'ipad-retina', output: '$file$-port.jpg' },
+            { width : 1536,  height : 2048, type: 'ipad-retina', output: '$file$-port-full.jpg' },
+            { width : 2048,  height : 1496, type: 'ipad-retina', output: '$file$-land.jpg' },
+            { width : 2048,  height : 1536, type: 'ipad-retina', output: '$file$-land-full.jpg' }
+
         ]
     },
 

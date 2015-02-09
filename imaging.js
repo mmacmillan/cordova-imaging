@@ -132,7 +132,7 @@ var imaging = {
                     : actions.push(util.checkPath(config.sources.splashscreen));
             }
 
-            Q.all(actions).then(def.resolve, def.reject.bind(def, 'the sources could not be verified'));
+            Q.all(actions).then(def.resolve, def.reject.bind(def, 'the sources could not be verified; check the paths to your sources.'));
         }
 
         return p;
@@ -181,9 +181,13 @@ var imaging = {
             console.log('\ngenerating icons for', cfg.name);
 
             var dest = cfg.destinationPath.replace('$name$', imaging.project.name),
-                fn = imaging.generateIcon.bind(this, dest);
+                fn = imaging.generateIcon.bind(this, dest),
+                actions = _.map(cfg.icons, fn);
 
-            queue.push(Q.all(_.map(cfg.icons, fn)));
+            //** add one more task to generate the app store app icon at the asset path
+            !!cfg.appstoreIcon && actions.push(imaging.generateIcon(config.assetPath, cfg.appstoreIcon));
+
+            queue.push(Q.all(actions));
         });
 
         return Q.all(queue);
