@@ -1,7 +1,7 @@
 {
   "name": "cordova-imaging",
   "description": "Configuration driven imaging module used by Cordova apps to generate app icons, splash screens, app store previews, etc.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "homepage": "https://github.com/mmacmillan/cordova-imaging",
   "author": {
     "name": "Mike MacMillan",
