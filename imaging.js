@@ -4,6 +4,7 @@ var fs = require('fs'),
     _ = require('lodash'),
     xmlParser = require('xml2js').parseString,
     magick = require('imagemagick'),
+    gm = require('gm'),
     mkdirp = require('mkdirp'),
     phantomjs = require('phantomjs'),
     defaultConfig = require('./config');
@@ -60,7 +61,9 @@ var imaging = {
         },
 
         checkPath: function(path) {
-            var def = Q.defer();
+            var def = Q.defer(),
+                //** allows for the path to be an object { path: '' } or string
+                path = typeof(path) === 'string' ? path : path.path; 
 
             fs.exists(path, function(exists) {
                 !!exists
@@ -127,7 +130,7 @@ var imaging = {
             //** same thing for splashscreens
             if(needsSplash) {
                 console.log('    splashscreen source ...', !!config.sources.splashscreen?'found':'not found');
-                !config.sources.appicon
+                !config.sources.splashscreen
                     ? def.reject('at least one platform is generating splashscreens, and a splashscreen source hasn\'t been defined')
                     : actions.push(util.checkPath(config.sources.splashscreen));
             }
@@ -242,31 +245,26 @@ var imaging = {
     generateSplashscreen: function(path, splash) {
         //** generate the options for this splashscreen, based on the root config
         var def = Q.defer(),
-            splashPath = config.sources.splashscreen,
-            opt = _.extend({}, config.imagemagick.crop, {
-                srcPath: splashPath[0]=='/' ? splashPath : pth.join(process.cwd(), splashPath),
-                dstPath: pth.join(process.cwd(), path, splash.output)
-            });
+            splashCfg = config.sources.splashscreen;
+
+        if(typeof(splashCfg) === 'string')
+            splashCfg = { path: splashCfg };
+
+        var srcPath = splashCfg.path[0]=='/' ? splashCfg.path : pth.join(process.cwd(), splashCfg.path),
+            dstPath = pth.join(process.cwd(), path, splash.output);
 
         console.log('   ', splash.width, 'x', splash.height, splash.output);
 
-        //** if we provide both height and width, we get a square; give it the largest dimension, setting us up for the crop 
-        splash.width > splash.height 
-            ? (opt.width = splash.width)
-            : (opt.height = splash.height);
-
-        //** specify the gravity and crop dimensions for our target splashscreen
-        opt.customArgs = [
-            '-gravity',
-            'Center',
-            '-crop',
-            splash.width +'x'+ splash.height +'+0+0',
-            '+repage'
-        ];
-
-        magick.resize(opt, function(err) {
-            !!err ? def.reject(err) : def.resolve();
-        });
+        gm(srcPath)
+            .gravity('Center')
+            .resize(splash.width) //** resize/scale the image to the desired output width
+            .extent(splash.width, splash.height) //** sets the destination image size; overflow will be cropped
+            .background(splashCfg.background || 'black')
+            .quality(100)
+            .noProfile() //** no exif, smaller image
+            .write(dstPath, function(err) {
+                !err && def.resolve() || def.reject();
+            });
 
         return def.promise;
     },
@@ -306,6 +304,42 @@ var imaging = {
             srcPath = source[0]=='/' ? source : pth.join(process.cwd(), source);
 
         _.each(cfg.previews, function(preview) {
+
+/*
+ * GraphicsMagick implementation
+ *  - gm provides a bit easier interface to guarentee the destination image size, so i prefer it over imagemagick
+ */
+
+            //** determine the path to the previews of the specific type/platform
+            var previewRoot = pth.join(process.cwd(), path, preview.type),
+                filename = preview.output.replace('$file$', pth.basename(source, pth.extname(source))),
+                previewPath = pth.join(previewRoot, filename),
+                opt = _.extend({}, config.imagemagick.crop, {
+                    srcPath: srcPath,
+                    dstPath: previewPath
+                });
+
+            var def = Q.defer();
+            queue.push(def.promise);
+
+            //** ensure the destination path, then generate the preview images based on the configuration
+            imaging.util.ensurePath(previewRoot).then(function() {
+                console.log('       ', preview.width, 'x', preview.height, preview.type, filename);
+
+                gm(srcPath)
+                    .resize(preview.width) //** resize/scale the image to the desired output width
+                    .extent(preview.width, preview.height) //** sets the destination image size; overflow will be cropped
+                    .quality(100)
+                    .noProfile() //** no exif, smaller image
+                    .write(previewPath, function(err) {
+                        !err && def.resolve() || def.reject();
+                    });
+            }, handleError);
+
+
+/*
+ * ImageMagick implementation
+ *
             //** determine the path to the previews of the specific type/platform
             var previewRoot = pth.join(process.cwd(), path, preview.type),
                 filename = preview.output.replace('$file$', pth.basename(source, pth.extname(source))),
@@ -318,7 +352,8 @@ var imaging = {
             console.log('       ', preview.width, 'x', preview.height, preview.type, filename);
             imaging.util.ensurePathSync(previewRoot);
 
-            //** if we provide both height and width, we get a square and its fubars the crop; give it the largest dimension only
+            //** if we provide both height and width, we get a square and its fubars the crop; give it the largest dimension only.  this will
+            //** scale the image, however, which will effect the final dimensions of the image.
             preview.width > preview.height 
                 ? (opt.width = preview.width)
                 : (opt.height = preview.height);
@@ -337,6 +372,7 @@ var imaging = {
             magick.resize(opt, function(err) {
                 !!err ? def.reject(err) : def.resolve();
             });
+*/
         });
 
         return Q.all(queue);

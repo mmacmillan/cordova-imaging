@@ -28,6 +28,7 @@
     "q": "1.1.x",
     "xml2js": "0.4.x",
     "imagemagick": "0.1.x",
+    "gm": "1.17.x",
     "mkdirp": "0.5.x",
     "phantom": "0.7.x"
   },
