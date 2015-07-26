@@ -5,19 +5,20 @@
  */
 
 module.exports = {
+    //** the name of the cordova project config xml file
     configXml: 'config.xml',
     
-    //** generated assets like previews, etc, are output here
+    //** assets like previews, etc, are output here, and source assets are read from here
     assetPath: 'assets/',
 
-    //** appicon and splashscreen source configs. by default they are in an ./assets subfolder in the root of your 
+    //** appicon and splashscreen source paths. by default they are in an ./assets subfolder in the root of your 
     //** cordova project.  these can be located anywhere on disk; override in the config local to your project.
     sources: {
         appicon: 'assets/appicon.png',
         splashscreen: 'assets/splashscreen.png'
     },
 
-    //** default platforms we target imaging for are ios and android 
+    //** default platforms we target imaging for are ios and android
     platforms: ['ios', 'android'],
 
     //** default config for imagemagick
@@ -33,14 +34,19 @@ module.exports = {
 
     ios: {
         name: 'iOS',
+
+        //** path to cordova iOS project
         path: 'platforms/ios',
+
+        //** path where assets are output for mobile app
         destinationPath: 'platforms/ios/$name$/Resources/',
 
+        //** by default, generate icons, splashscreens, and previews
         generateIcons: true,
         generateSplashscreens: true,
         generatePreviews: true,
 
-        //** source: https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html
+        //** supported icons, source: https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html
         icons: [
             //** non-retina
             { size: 40, output: 'icons/icon-40.png' },
@@ -65,7 +71,7 @@ module.exports = {
         //** define the app store app icon; this will be generated along with the normal app icons; no alphas or transparencies, hence the jpg
         appstoreIcon: { size: 1024, output: 'appstore-icon.jpg' },
 
-        //** source: https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html#//apple_ref/doc/uid/TP40006556-CH27-SW2
+        //** supported splashscreens, source: https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html#//apple_ref/doc/uid/TP40006556-CH27-SW2
         splashscreens: [
             //** portrait
             { width : 640,  height : 1136, output: 'splash/Default-568h@2x~iphone.png' },
@@ -122,14 +128,19 @@ module.exports = {
 
     android: {
         name: 'Android',
+
+        //** path to cordova android project
         path: 'platforms/android/',
+
+        //** path where assets are output for mobile app
         destinationPath: 'platforms/android/res/',
 
+        //** by default, generate icons, splashscreens, and previews
         generateIcons: true,
         generateSplashscreens: true,
         generatePreviews: true,
 
-        //** source: http://developer.android.com/design/style/iconography.html
+        //** supported icons, source: http://developer.android.com/design/style/iconography.html
         //** note: ldpi support is automatically provided by android
         icons: [
             { size: 96, output: 'drawable/icon.png' },
@@ -142,7 +153,7 @@ module.exports = {
             //{ size: 192, output: 'drawable-xxxhdpi/icon.png' }
         ],
 
-        //** source: http://developer.android.com/guide/practices/screens_support.html
+        //** supported splashscreens, source: http://developer.android.com/guide/practices/screens_support.html
         splashscreens: [
             //** landscape
             { width: 320, height: 200, output: 'drawable-land-ldpi/screen.png' },

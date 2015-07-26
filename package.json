@@ -35,10 +35,12 @@
   "keywords": [
     "cordova",
     "imaging",
-    "icons",
     "app icons",
     "splash screens",
-    "splashscreen"
+    "splashscreen",
+    "generate splashscreen",
+    "generate app icons",
+    "graphicsmagick"
   ],
   "directories": {
     "bin": "./bin"
