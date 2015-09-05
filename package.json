@@ -36,10 +36,10 @@
     "cordova",
     "imaging",
     "app icons",
-    "splash screens",
+    "splash screen",
     "splashscreen",
-    "generate splashscreen",
-    "generate app icons",
+    "generate splash screen",
+    "generate app icon",
     "graphicsmagick"
   ],
   "directories": {

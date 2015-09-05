@@ -208,11 +208,23 @@ var imaging = {
                 width: icon.size
             });
 
+
         console.log('   ', icon.size, 'x', icon.size, icon.output);
-        magick.resize(opt, function(err) {
-            //** imagemagick wont create directories (yet), so a failure in creating images usually means directories are missing...
-            !!err ? def.reject(err) : def.resolve();
+
+        //** its possible for some directories to not be created; ex latest version of cordova android 4.* doesn't create res/drawable/ 
+        var dstDir = pth.dirname(opt.dstPath);
+        fs.exists(dstDir, function(exists) {
+            !!exists
+                ? doResize()
+                : fs.mkdir(dstDir, function(err) { !!err ? def.reject(err) : doResize() });
         });
+
+        function doResize() {
+            magick.resize(opt, function(err) {
+                //** imagemagick wont create directories (yet), so a failure in creating images usually means directories are missing...
+                !!err ? def.reject(err) : def.resolve();
+            });
+        }
 
         return def.promise;
     },
